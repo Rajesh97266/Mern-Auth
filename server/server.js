@@ -10,12 +10,14 @@ const port = process.env.PORT || 4000;
 
 connectDB();
 
+const allowedOrigins = ["http://localhost:5173"];
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
     credentials: true,
-    origin: "http://localhost:4000",
+    origin: allowedOrigins,
   })
 );
 
@@ -24,6 +26,6 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/user" , userRouter)
+app.use("/api/user", userRouter);
 
 app.listen(port, () => console.log(`Server started on PORT: ${port}`));
