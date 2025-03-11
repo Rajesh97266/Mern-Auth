@@ -10,7 +10,7 @@ const Navbar = () => {
 
   const { userData, backendUrl, setUserData, setIsLoggedin } =
     useContext(AppContext); 
-// console.log(userData);
+
 
 const sendVerificationOtp = async () => {
   try {

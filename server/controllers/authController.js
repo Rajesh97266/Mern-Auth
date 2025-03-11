@@ -1,28 +1,31 @@
-import bcrypt from "bcryptjs";
+import bycrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
-import transporter from "../config/nodemailer.js"
+import transporter from "../config/nodemailer.js";
+import {
+  EMAIL_VERIFY_TEMPLATE,
+  PASSWORD_RESET_TEMPLATE,
+} from "../config/emailTemplates.js";
 
-//register
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
     return res.json({ success: false, message: "Missing details" });
   }
+
   try {
     const existingUser = await userModel.findOne({ email });
+
     if (existingUser) {
       return res.json({ success: false, message: "User already exists" });
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new userModel({
-      name,
-      email,
-      password: hashedPassword,
-    });
+
+    const hashedPassword = await bycrypt.hash(password, 10);
+
+    const user = new userModel({ name, email, password: hashedPassword });
     await user.save();
-    //generate token using jwt
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
@@ -34,23 +37,22 @@ export const register = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    //send welcome email
+    // Sending welcome email
     const mailOptions = {
-    from: process.env.SENDER_EMAIL,
+      from: process.env.SENDER_EMAIL,
       to: email,
-      subject: "Welcome to MERN Auth",
-      text: `Hello ${name}, welcome to MERN Auth. Your account has been created successfully.`,
+      subject: "Welcome to Elysée DEV",
+      text: `Welcome to elyséedev website. Your account has been created with email id: ${email}`,
     };
 
     await transporter.sendMail(mailOptions);
 
-    return res.json({ success: true, message: "User registered successfully" });
+    return res.json({ success: true });
   } catch (error) {
     res.json({ success: false, message: error.message });
   }
 };
 
-//login
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -68,7 +70,7 @@ export const login = async (req, res) => {
       return res.json({ success: false, message: "Invalid Email" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bycrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.json({ success: false, message: "Invalid Password" });
@@ -85,33 +87,30 @@ export const login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.json({ success: true, message: "User logged in successfully" });
+    return res.json({ success: true });
   } catch (error) {
     return res.json({ success: false, message: error.message });
   }
 };
 
-//logout
-export const logout = (req, res) => {
+export const logout = async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     });
-    return res.json({ success: true, message: "Logged Out Successfully" });
+
+    return res.json({ success: true, message: "Logged Out" });
   } catch (error) {
     return res.json({ success: false, message: error.message });
   }
 };
 
+// Send Verification OTP to the User's Email
 export const sendVerifyOtp = async (req, res) => {
   try {
     const { userId } = req.body;
-    // Check if userId is provided
-    if (!userId) {
-      return res.json({ success: false, message: "User ID is required" });
-    }
 
     const user = await userModel.findById(userId);
 
@@ -130,7 +129,11 @@ export const sendVerifyOtp = async (req, res) => {
       from: process.env.SENDER_EMAIL,
       to: user.email,
       subject: "Account Verification OTP",
-      text: `Your OTP is ${otp}. Verify your account using this OTP.`,
+      // text: `Your OTP is ${otp}. Verify your account using this OTP.`,
+      html: EMAIL_VERIFY_TEMPLATE.replace("{{otp}}", otp).replace(
+        "{{email}}",
+        user.email
+      ),
     };
 
     await transporter.sendMail(mailOptions);
@@ -144,7 +147,6 @@ export const sendVerifyOtp = async (req, res) => {
 // Verify the Email using the OTP
 export const verifyEmail = async (req, res) => {
   const { userId, otp } = req.body;
-  console.log("Received userId:", userId);
 
   if (!userId || !otp) {
     return res.json({
@@ -218,8 +220,11 @@ export const sendResetOtp = async (req, res) => {
       from: process.env.SENDER_EMAIL,
       to: user.email,
       subject: "Password Reset OTP",
-      text: `Your OTP for resetting your password is ${otp}. Use this OTP to proceed with resetting your password.`,
-      
+      // text: `Your OTP for resetting your password is ${otp}. Use this OTP to proceed with resetting your password.`,
+      html: PASSWORD_RESET_TEMPLATE.replace("{{otp}}", otp).replace(
+        "{{email}}",
+        user.email
+      ),
     };
 
     await transporter.sendMail(mailOptions);
@@ -256,7 +261,7 @@ export const resetPassword = async (req, res) => {
       return res.json({ success: false, message: "OTP Expired" });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bycrypt.hash(newPassword, 10);
 
     user.password = hashedPassword;
     user.resetOtp = "";
