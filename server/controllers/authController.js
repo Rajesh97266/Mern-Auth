@@ -1,4 +1,4 @@
-import bycrypt from "bcryptjs";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
 import transporter from "../config/nodemailer.js";
@@ -18,10 +18,10 @@ export const register = async (req, res) => {
     const existingUser = await userModel.findOne({ email });
 
     if (existingUser) {
-      return res.json({ success: false, message: "User already exists" });
+      return res.json({ success: false, message: "User already exists!!!" });
     }
 
-    const hashedPassword = await bycrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new userModel({ name, email, password: hashedPassword });
     await user.save();
@@ -41,13 +41,15 @@ export const register = async (req, res) => {
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
       to: email,
-      subject: "Welcome to Elysée DEV",
-      text: `Welcome to elyséedev website. Your account has been created with email id: ${email}`,
+      subject: "Welcome to MERN AUTH",
+      text: `Welcome to Rajesh website. Your account has been created with email id: ${email}`,
     };
 
     await transporter.sendMail(mailOptions);
 
-    return res.json({ success: true });
+    const response = { success: true, message: "User registered successfully" };
+    console.log(response);
+    return res.json(response);
   } catch (error) {
     res.json({ success: false, message: error.message });
   }
@@ -67,10 +69,10 @@ export const login = async (req, res) => {
     const user = await userModel.findOne({ email });
 
     if (!user) {
-      return res.json({ success: false, message: "Invalid Email" });
+      return res.json({ success: false, message: "Invalid User Email" });
     }
 
-    const isMatch = await bycrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.json({ success: false, message: "Invalid Password" });
@@ -261,7 +263,7 @@ export const resetPassword = async (req, res) => {
       return res.json({ success: false, message: "OTP Expired" });
     }
 
-    const hashedPassword = await bycrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     user.password = hashedPassword;
     user.resetOtp = "";
