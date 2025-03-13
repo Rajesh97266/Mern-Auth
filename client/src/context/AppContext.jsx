@@ -6,6 +6,8 @@ export const AppContext = createContext();
 
 export const AppContextProvider = (props) => {
   axios.defaults.withCredentials = true;
+  axios.defaults.headers.common['Access-Control-Allow-Credentials'] = true;
+  axios.defaults.headers.common['Access-Control-Allow-Origin'] = import.meta.env.MODE === 'development' ? 'http://localhost:5173' : 'https://mern-auth-frontend.onrender.com';
 
   const backendUrl =
     import.meta.env.MODE === "development"

@@ -9,16 +9,15 @@ import path from "path";
 
 const __dirname = path.resolve();
 
-
 const app = express();
 const port = process.env.PORT || 4000;
-
 
 connectDB();
 
 const allowedOrigins = [
   "http://localhost:5173",
-  
+  "https://mern-auth-backend-ortn.onrender.com",
+  "https://mern-auth-frontend.onrender.com",
 ];
 
 app.use(express.json());
@@ -27,8 +26,8 @@ app.use(
   cors({
     credentials: true,
     origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], 
-    allowedHeaders: ["Content-Type", "Authorization"], 
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -38,8 +37,6 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.resolve(__dirname, "../client", "dist", "index.html"));
   });
 }
-
-
 
 app.get("/", (req, res) => {
   res.send("API Working");
